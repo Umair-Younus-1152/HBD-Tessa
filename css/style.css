@@ -1,0 +1,448 @@
+/* ============================================================
+   DESIGN TOKENS
+   ------------------------------------------------------------
+   Colors here are fallbacks — app.js copies the palette from
+   js/config.js onto :root at runtime, so config.js is the real
+   source of truth. Spacing / timing / radius live only here.
+   ============================================================ */
+:root {
+	--cream:     #FFF6EC;
+	--peach:     #F6C9A0;
+	--rose:      #E28B93;
+	--rose-deep: #B85566;
+	--gold:      #CB9A46;
+	--sage:      #93A97C;
+	--ink:       #4A3B34;
+
+	--font-display: 'Parisienne', cursive;
+	--font-heading: 'Fraunces', serif;
+	--font-body:    'Quicksand', sans-serif;
+
+	--space-1: 0.5rem;
+	--space-2: 1rem;
+	--space-3: 1.5rem;
+	--space-4: 2.5rem;
+	--space-5: 4rem;
+
+	--radius: 18px;
+	--ease: cubic-bezier(.22,1,.36,1);
+	--controls-h: 118px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+* { box-sizing: border-box; }
+
+html, body {
+	height: 100%;
+	scrollbar-gutter: stable;
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	overflow-x: hidden;
+	font-family: var(--font-body);
+	color: var(--ink);
+	background: radial-gradient(120% 100% at 50% 0%, var(--cream) 0%, var(--peach) 85%);
+	background-attachment: fixed;
+	transition: background-color 1.2s var(--ease);
+}
+
+img { max-width: 100%; display: block; }
+button { font: inherit; }
+
+/* ============================================================
+   LOADER
+   ============================================================ */
+.loader {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--cream);
+	transition: opacity .5s var(--ease), visibility .5s var(--ease);
+}
+.loader.is-hidden {
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+}
+.loader__spinner {
+	width: 46px;
+	height: 46px;
+	border-radius: 50%;
+	border: 4px solid rgba(203, 154, 70, 0.25);
+	border-top-color: var(--gold);
+	animation: spin 900ms linear infinite;
+}
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   AMBIENT SPARKLES (signature atmosphere, runs throughout)
+   ============================================================ */
+.ambient {
+	position: fixed;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	overflow: hidden;
+}
+.ambient__spark {
+	position: absolute;
+	bottom: -5%;
+	width: var(--size, 6px);
+	height: var(--size, 6px);
+	border-radius: 50%;
+	background: var(--gold);
+	opacity: 0;
+	filter: drop-shadow(0 0 4px rgba(203,154,70,.6));
+	animation: drift var(--dur, 12s) linear var(--delay, 0s) infinite;
+	left: var(--x, 50%);
+}
+@keyframes drift {
+	0%   { transform: translateY(0) translateX(0); opacity: 0; }
+	10%  { opacity: .8; }
+	90%  { opacity: .5; }
+	100% { transform: translateY(-105vh) translateX(var(--drift, 40px)); opacity: 0; }
+}
+
+/* ============================================================
+   FAIRY LIGHT STRING
+   ============================================================ */
+.lightstring {
+	position: relative;
+	z-index: 5;
+	list-style: none;
+	margin: 0;
+	padding: var(--space-3) var(--space-2) 0;
+	display: flex;
+	justify-content: center;
+	gap: clamp(10px, 4vw, 34px);
+}
+.lightstring__bulb {
+	width: 30px;
+	height: 42px;
+	background-image: url('../assets/bulb.png');
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+	transition: filter .6s var(--ease);
+}
+.lightstring__bulb.is-lit {
+	background-image: var(--bulb-img);
+	filter:
+		drop-shadow(0 0 8px var(--bulb-color, var(--gold)))
+		drop-shadow(0 0 18px color-mix(in srgb, var(--bulb-color, var(--gold)) 55%, transparent));
+	animation: bulb-flicker 2.6s ease-in-out var(--flicker-delay, 0s) infinite;
+}
+@keyframes bulb-flicker {
+	0%, 100% { filter: drop-shadow(0 0 8px var(--bulb-color, var(--gold))) brightness(1); }
+	50%      { filter: drop-shadow(0 0 14px var(--bulb-color, var(--gold))) brightness(1.3); }
+}
+
+/* ============================================================
+   BALLOON FIELD (name balloons + free-floating decorative ones)
+   ============================================================ */
+.balloon-field {
+	position: fixed;
+	inset: 0;
+	z-index: 90;
+	pointer-events: none;
+	overflow: hidden;
+}
+.balloon {
+	position: absolute;
+	bottom: -220px;
+	left: var(--x, 50%);
+	width: 92px;
+	height: 168px;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+	opacity: 0;
+}
+.balloon__label {
+	position: absolute;
+	top: 34%;
+	left: 0;
+	right: 0;
+	text-align: center;
+	font-family: var(--font-heading);
+	font-weight: 600;
+	font-size: 28px;
+	color: #fff;
+	text-shadow: 0 2px 4px rgba(0,0,0,.25);
+	opacity: 0;
+	transition: opacity .6s var(--ease);
+}
+
+/* Scene: balloons rise and sway */
+.balloon-field.is-flying .balloon {
+	animation:
+		balloon-rise 7s var(--ease) forwards,
+		balloon-sway 4.5s ease-in-out .8s infinite;
+	animation-delay: var(--rise-delay, 0s), calc(var(--rise-delay, 0s) + 1s);
+}
+@keyframes balloon-rise {
+	0%   { transform: translateY(0) rotate(var(--rot-start, -8deg)); opacity: 0; }
+	8%   { opacity: .95; }
+	100% { transform: translateY(var(--rise-to, -115vh)) rotate(var(--rot-end, 8deg)); opacity: .95; }
+}
+@keyframes balloon-sway {
+	0%, 100% { margin-left: -14px; }
+	50%      { margin-left: 14px; }
+}
+
+/* Scene: balloons gather to spell the name */
+.balloon-field.is-spelling .balloon {
+	animation: none;
+	transition: left 900ms var(--ease), top 900ms var(--ease), transform 900ms var(--ease), opacity 600ms var(--ease);
+	top: var(--spell-top, 30%);
+	left: var(--spell-left, 50%);
+	transform: translate(-50%, -50%) rotate(0deg);
+	opacity: .96;
+	bottom: auto;
+}
+.balloon-field.is-spelling .balloon__label {
+	opacity: 1;
+}
+
+.balloon-border {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: -20%;
+	width: 100%;
+	z-index: 95;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 1s var(--ease);
+}
+.balloon-border.is-visible {
+	opacity: .9;
+}
+.balloon-border.is-rising {
+	transition: transform 8s linear, opacity 1.5s var(--ease) 6.5s;
+	transform: translateY(-140vh);
+	opacity: 0;
+}
+
+/* ============================================================
+   STAGE LAYOUT
+   ============================================================ */
+.stage {
+	position: relative;
+	z-index: 2;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+.stage__scroll {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding-bottom: calc(var(--controls-h) + var(--space-4));
+}
+
+.stage__banner {
+	width: min(90%, 460px);
+	margin: var(--space-4) auto var(--space-2);
+	overflow: visible;
+}
+#banner {
+	transform: translateY(-140px) rotate(-6deg);
+	opacity: 0;
+	transition: transform 1s var(--ease), opacity .6s var(--ease);
+}
+#banner.is-shown {
+	transform: translateY(0) rotate(0deg);
+	opacity: 1;
+	transition: transform 1.1s cubic-bezier(.34,1.4,.4,1), opacity .6s var(--ease);
+}
+
+.stage__center {
+	flex: 1;
+	width: min(92%, 640px);
+	display: grid;
+	grid-template-areas: "stack";
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	min-height: 320px;
+}
+
+/* Cake */
+/* Cake */
+.cake {
+	grid-area: stack;
+	justify-self: center;
+	width: min(70%, 260px);
+	opacity: 0;
+	transform: scale(.85) translateY(14px);
+	transition: opacity 1s var(--ease), transform 1s var(--ease);
+	filter: drop-shadow(0 18px 22px rgba(184, 85, 102, .25));
+}
+.cake.is-shown {
+	opacity: 1;
+	transform: scale(1) translateY(0);
+	animation: cake-glow 3.2s ease-in-out .8s infinite;
+}
+@keyframes cake-glow {
+	0%, 100% { filter: drop-shadow(0 18px 22px rgba(184, 85, 102, .25)) brightness(1); }
+	50%      { filter: drop-shadow(0 18px 30px rgba(203, 154, 70, .35)) brightness(1.04); }
+}
+
+/* Wish heading */
+.wish-heading {
+	grid-area: stack;
+	font-family: var(--font-display);
+	font-size: clamp(2.6rem, 9vw, 4.4rem);
+	color: var(--rose-deep);
+	margin: 0;
+	line-height: 1;
+	opacity: 0;
+	transform: translateY(16px) scale(.96);
+	transition: opacity .9s var(--ease), transform .9s var(--ease);
+}
+.wish-heading.is-shown {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+}
+
+/* Story / poem box */
+.story-box {
+	grid-area: stack;
+	min-height: 4.2em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	opacity: 0;
+	transition: opacity .6s var(--ease);
+}
+.story-box.is-shown { opacity: 1; }
+
+.story-line {
+	margin: 0;
+	font-family: var(--font-heading);
+	font-weight: 500;
+	font-style: italic;
+	font-size: clamp(1.3rem, 4.4vw, 2rem);
+	color: var(--rose-deep);
+	text-shadow: 0 2px 10px rgba(255,255,255,.6);
+	opacity: 0;
+	transform: translateY(10px);
+	transition: opacity .55s var(--ease), transform .55s var(--ease);
+}
+.story-line.is-visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+/* ============================================================
+   CONTROLS
+   ============================================================ */
+.controls {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 200;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-1);
+	padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom));
+	background: linear-gradient(180deg, rgba(255,246,236,0) 0%, var(--cream) 45%);
+}
+.controls__progress {
+	margin: 0;
+	font-size: .8rem;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--rose-deep);
+	opacity: .75;
+}
+
+.btn-primary {
+	appearance: none;
+	border: none;
+	cursor: pointer;
+	padding: 0.95em 2.1em;
+	border-radius: 999px;
+	font-family: var(--font-body);
+	font-weight: 700;
+	font-size: 1rem;
+	letter-spacing: .02em;
+	color: #fff;
+	background: linear-gradient(135deg, var(--rose) 0%, var(--rose-deep) 100%);
+	box-shadow: 0 10px 22px -8px rgba(184, 85, 102, .55);
+	transition: transform .25s var(--ease), box-shadow .25s var(--ease), opacity .3s var(--ease);
+}
+.btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 14px 26px -8px rgba(184, 85, 102, .6); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:focus-visible {
+	outline: 3px solid var(--gold);
+	outline-offset: 3px;
+}
+.btn-primary[disabled] {
+	opacity: .55;
+	cursor: default;
+	transform: none;
+}
+.btn-primary.is-swapping {
+	animation: btn-swap .35s var(--ease);
+}
+@keyframes btn-swap {
+	0%   { opacity: 1; transform: translateY(0) scale(1); }
+	40%  { opacity: 0; transform: translateY(6px) scale(.96); }
+	41%  { transform: translateY(-6px) scale(.96); }
+	100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ============================================================
+   CONFETTI (final scene burst)
+   ============================================================ */
+.confetti {
+	position: fixed;
+	top: -5%;
+	width: 9px;
+	height: 14px;
+	z-index: 300;
+	pointer-events: none;
+	background: var(--piece-color, var(--rose));
+	left: var(--x, 50%);
+	opacity: .95;
+	border-radius: 2px;
+	animation: confetti-fall var(--dur, 3.2s) linear var(--delay, 0s) forwards;
+}
+@keyframes confetti-fall {
+	0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+	100% { transform: translateY(105vh) rotate(var(--spin, 540deg)); opacity: 0; }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+	:root { --controls-h: 132px; }
+	.lightstring__bulb { width: 24px; height: 24px; }
+	.balloon { width: 72px; height: 132px; }
+	.btn-primary { padding: 0.85em 1.6em; font-size: .92rem; }
+}
